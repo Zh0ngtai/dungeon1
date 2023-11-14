@@ -42,26 +42,24 @@ internal class Program
         switch (job)
         {
             case "전사":
-                Item sword = new Item("검", 5, 0, 0);
+                Item sword = new Item("검", 5, 0, 0, 0);
                 player.AddItem(sword);
                 break;
 
             case "마법사":
-                Item staff = new Item("지팡이", 3, 0, 0);
+                Item staff = new Item("지팡이", 3, 0, 0, 0);
                 player.AddItem(staff);
                 break;
 
             case "레인저":
-                Item bow = new Item("활", 4, 0, 0);
+                Item bow = new Item("활", 4, 0, 0, 0);
                 player.AddItem(bow);
                 break;
         }
     }
 
-
     static string ChooseClass()
     {
-
         Console.WriteLine("직업을 선택하세요:");
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine("1. 전사");
@@ -69,9 +67,9 @@ internal class Program
         Console.WriteLine("2. 마법사");
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine("3. 레인저");
-        Console.ForegroundColor = ConsoleColor.Gray;//<< 다시 원래대로 색깔을 돌려줘야함...
+        Console.ForegroundColor = ConsoleColor.Gray;
         int classChoice = CheckValidInput(1, 3);
-        
+
         switch (classChoice)
         {
             case 1:
@@ -87,6 +85,7 @@ internal class Program
                 return ""; // 예외 처리를 위한 기본값
         }
     }
+
     static void DisplayGameIntro()
     {
         Console.Clear();
@@ -96,10 +95,11 @@ internal class Program
         Console.WriteLine();
         Console.WriteLine("1. 상태보기");
         Console.WriteLine("2. 인벤토리");
+        Console.WriteLine("3. 상점");
         Console.WriteLine();
         Console.WriteLine("원하시는 행동을 입력해주세요.");
 
-        int input = CheckValidInput(1, 2);
+        int input = CheckValidInput(1, 3);
         switch (input)
         {
             case 1:
@@ -108,6 +108,10 @@ internal class Program
 
             case 2:
                 DisplayInventory();
+                break;
+
+            case 3:
+                DisplayShop();
                 break;
         }
     }
@@ -121,9 +125,20 @@ internal class Program
         Console.WriteLine();
         Console.WriteLine($"Lv.{player.Level}");
         Console.WriteLine($"{player.Name}({player.Job})");
-        Console.WriteLine($"공격력 :{player.Atk}");
-        Console.WriteLine($"방어력 : {player.Def}");
-        Console.WriteLine($"체력 : {player.Hp}");
+
+        if (player.EquippedItem != null)
+        {
+            Console.WriteLine($"공격력 : {player.Atk} + ({player.EquippedItem.AtkBonus})");
+            Console.WriteLine($"방어력 : {player.Def} + ({player.EquippedItem.DefBonus})");
+            Console.WriteLine($"체력 : {player.Hp} + ({player.EquippedItem.HpBonus})");
+        }
+        else
+        {
+            Console.WriteLine($"공격력 : {player.Atk}");
+            Console.WriteLine($"방어력 : {player.Def}");
+            Console.WriteLine($"체력 : {player.Hp}");
+        }
+
         Console.WriteLine($"Gold : {player.Gold} G");
         Console.WriteLine();
         Console.WriteLine("0. 나가기");
@@ -136,6 +151,7 @@ internal class Program
                 break;
         }
     }
+
 
     static void DisplayInventory()
     {
@@ -157,7 +173,16 @@ internal class Program
             for (int i = 0; i < player.Inventory.Count; i++)
             {
                 Item item = player.Inventory[i];
-                Console.WriteLine($"{i + 1}. {item.Name}");
+
+                // 장착한 아이템이면 '[E]' 추가
+                if (player.EquippedItem == item)
+                {
+                    Console.WriteLine($"[E] {i + 1}. {item.Name}");
+                }
+                else
+                {
+                    Console.WriteLine($"{i + 1}. {item.Name}");
+                }
             }
 
             Console.WriteLine("0. 나가기");
@@ -183,15 +208,212 @@ internal class Program
         Console.WriteLine($"방어 보너스: {item.DefBonus}");
         Console.WriteLine($"체력 보너스: {item.HpBonus}");
         Console.WriteLine();
+        Console.WriteLine("1. 장착하기");
+
+        // 장착한 아이템이면 해제 옵션 추가
+        if (player.EquippedItem == item)
+        {
+            Console.WriteLine("2. 장착 해제");
+        }
+
         Console.WriteLine("0. 나가기");
 
-        int input = CheckValidInput(0, 0);
-        if (input == 0)
+        int input = CheckValidInput(0, player.EquippedItem == item ? 2 : 1);
+        switch (input)
         {
-            DisplayInventory();
+            case 0:
+                DisplayInventory();
+                break;
+            case 1:
+                player.EquipItem(item); // 아이템을 장착
+                Console.WriteLine($"{item.Name}을(를) 장착했습니다.");
+                Console.WriteLine("아무 키나 누르면 인벤토리로 돌아갑니다...");
+                Console.ReadKey();
+                DisplayInventory();
+                break;
+            case 2:
+                player.UnequipItem(item); // 아이템 장착 해제
+                Console.WriteLine($"{item.Name}을(를) 장착 해제했습니다.");
+                Console.WriteLine("아무 키나 누르면 인벤토리로 돌아갑니다...");
+                Console.ReadKey();
+                DisplayInventory();
+                break;
+        }
+        
+    }
+    static void DisplayShop()
+    {
+        Console.Clear();
+
+        Console.WriteLine("상점");
+        Console.WriteLine($"현재 골드: {player.Gold} G");
+        Console.WriteLine();
+        Console.WriteLine("상품 목록:");
+
+        // 상품 목록 표시
+        foreach (var item in GetShopItems())
+        {
+            string status = player.Inventory.Contains(item) ? "구매완료" : $"{item.Name} - 가격: {item.Price} G";
+            Console.WriteLine(status);
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("1. 구매하기");
+        Console.WriteLine("2. 판매하기");
+        Console.WriteLine("0. 나가기");
+
+        int input = CheckValidInput(0, 2);
+        switch (input)
+        {
+            case 0:
+                DisplayGameIntro();
+                break;
+
+            case 1:
+                DisplayBuyMenu(); // 구매 메뉴 표시
+                break;
+
+            case 2:
+                DisplaySellMenu(); // 판매 메뉴 표시
+                break;
         }
     }
 
+    static List<Item> GetShopItems()
+    {
+        //상점 아이템 목록
+        List<Item> shopItems = new List<Item>
+        {
+            new Item("스파르타 검", 10, 0, 0, 300),
+            new Item("건강부", 0, 0, 10, 300),
+            new Item("요정의 활", 8, 2, 0, 300),
+            new Item("화염의 오브",3, 0, 0,300) 
+        };
+
+        return shopItems;
+    }
+    static void DisplayBuyMenu()
+    {
+        Console.Clear();
+
+        Console.WriteLine("구매하기");
+        Console.WriteLine($"현재 골드: {player.Gold} G");
+        Console.WriteLine();
+        Console.WriteLine("상품 목록:");
+
+        // 상품 목록 표시
+        List<Item> shopItems = GetShopItems();
+        for (int i = 0; i < shopItems.Count; i++)
+        {
+            Item item = shopItems[i];
+            Console.WriteLine($"{i + 1}. {item.Name} - 가격: {item.Price} G");
+        }
+
+        Console.WriteLine("0. 나가기");
+
+        int input = CheckValidInput(0, shopItems.Count);
+        if (input == 0)
+        {
+            DisplayShop();
+        }
+        else
+        {
+            BuyItem(shopItems[input - 1]);
+        }
+    }
+
+    static void BuyItem(Item item)
+    {
+        if (player.Gold >= item.Price)
+        {
+            // 골드가 충분한 경우
+            player.Gold -= item.Price; // 골드 차감
+            player.AddItem(item); // 아이템 추가
+            Console.WriteLine($"{item.Name}을(를) 구매했습니다.");
+        }
+        else
+        {
+            // 골드가 부족한 경우
+            Console.WriteLine("골드가 부족하여 구매할 수 없습니다.");
+        }
+
+        Console.WriteLine("아무 키나 누르면 상점으로 돌아갑니다...");
+        Console.ReadKey();
+        DisplayShop();
+    }
+    static void DisplaySellMenu()
+    {
+        Console.Clear();
+
+        Console.WriteLine("판매 메뉴");
+        Console.WriteLine($"현재 골드: {player.Gold} G");
+        Console.WriteLine();
+        Console.WriteLine("인벤토리 아이템 목록:");
+
+        // 인벤토리에 아이템이 있는지 확인 후 표시
+        if (player.Inventory.Count == 0)
+        {
+            Console.WriteLine("인벤토리가 비어있습니다.");
+        }
+        else
+        {
+            for (int i = 0; i < player.Inventory.Count; i++)
+            {
+                Item item = player.Inventory[i];
+                Console.WriteLine($"{i + 1}. {item.Name} - 가격: {item.Price} G");
+            }
+
+            Console.WriteLine("0. 나가기");
+
+            int input = CheckValidInput(0, player.Inventory.Count);
+            if (input == 0)
+            {
+                DisplayGameIntro();
+            }
+            else
+            {
+                SellItem(player.Inventory[input - 1]);
+            }
+        }
+    }
+
+    static void SellItem(Item item)
+    {
+        Console.Clear();
+
+        Console.WriteLine($"아이템 판매 - {item.Name}");
+        Console.WriteLine($"판매 가격: {item.Price} G");
+        Console.WriteLine();
+        Console.WriteLine("1. 판매하기");
+        Console.WriteLine("0. 나가기");
+
+        int input = CheckValidInput(0, 1);
+        switch (input)
+        {
+            case 0:
+                DisplaySellMenu();
+                break;
+
+            case 1:
+                SellConfirmed(item);
+                break;
+        }
+    }
+
+    static void SellConfirmed(Item item)
+    {
+        // 아이템 판매 처리
+        player.Gold += item.Price;
+        player.Inventory.Remove(item);
+
+        Console.WriteLine($"{item.Name}을(를) 성공적으로 판매했습니다.");
+        Console.WriteLine($"현재 골드: {player.Gold} G");
+        Console.WriteLine("아무 키나 누르면 나가기...");
+        Console.ReadKey();
+
+        // 판매 후 다시 판매 메뉴 표시
+        DisplaySellMenu();
+    }
 
     static int CheckValidInput(int min, int max)
     {
@@ -219,11 +441,20 @@ public class Character
     public int Atk { get; }
     public int Def { get; }
     public int Hp { get; }
-    public int Gold { get; }
+    public int Gold { get; set; }
 
     private List<Item> inventory;
+    private Item equippedItem;
+    public void UnequipItem(Item item)
+    {
+        // 현재 장착된 아이템과 매개변수로 받은 아이템이 일치하면 해제
+        if (equippedItem == item)
+        {
+            equippedItem = null;
+        }
+    }
 
-    public Character(string name, string job, int level, int atk, int def, int hp, int gold)
+public Character(string name, string job, int level, int atk, int def, int hp, int gold)
     {
         Name = name;
         Job = job;
@@ -233,6 +464,7 @@ public class Character
         Hp = hp;
         Gold = gold;
         inventory = new List<Item>();
+        equippedItem = null;
     }
 
     public void AddItem(Item item)
@@ -240,9 +472,19 @@ public class Character
         inventory.Add(item);
     }
 
+    public void EquipItem(Item item)
+    {
+        equippedItem = item;
+    }
+
     public List<Item> Inventory
     {
         get { return inventory; }
+    }
+
+    public Item EquippedItem
+    {
+        get { return equippedItem; }
     }
 }
 
@@ -252,12 +494,14 @@ public class Item
     public int AtkBonus { get; }
     public int DefBonus { get; }
     public int HpBonus { get; }
+    public int Price { get; }
 
-    public Item(string name, int atkBonus, int defBonus, int hpBonus)
+    public Item(string name, int atkBonus, int defBonus, int hpBonus, int price)
     {
         Name = name;
         AtkBonus = atkBonus;
         DefBonus = defBonus;
         HpBonus = hpBonus;
+        Price = price;
     }
 }
