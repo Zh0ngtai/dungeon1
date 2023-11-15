@@ -42,20 +42,21 @@ internal class Program
         switch (job)
         {
             case "전사":
-                Item sword = new Item("검", 5, 0, 0, 0);
+                EquipmentItem sword = new EquipmentItem("검", 5, 0, 0, 100);
                 player.AddItem(sword);
                 break;
 
             case "마법사":
-                Item staff = new Item("지팡이", 3, 0, 0, 0);
+                EquipmentItem staff = new EquipmentItem("지팡이", 3, 0, 0, 120);
                 player.AddItem(staff);
                 break;
 
             case "레인저":
-                Item bow = new Item("활", 4, 0, 0, 0);
+                EquipmentItem bow = new EquipmentItem("활", 4, 0, 0, 80);
                 player.AddItem(bow);
                 break;
         }
+
     }
 
     static string ChooseClass()
@@ -126,11 +127,12 @@ internal class Program
         Console.WriteLine($"Lv.{player.Level}");
         Console.WriteLine($"{player.Name}({player.Job})");
 
-        if (player.EquippedItem != null)
+        if (player.EquippedItem != null && player.EquippedItem is EquipmentItem equippedItem)
         {
-            Console.WriteLine($"공격력 : {player.Atk} + ({player.EquippedItem.AtkBonus})");
-            Console.WriteLine($"방어력 : {player.Def} + ({player.EquippedItem.DefBonus})");
-            Console.WriteLine($"체력 : {player.Hp} + ({player.EquippedItem.HpBonus})");
+            Console.WriteLine("장착 아이템:");
+            Console.WriteLine($"공격력 : {player.Atk} + ({equippedItem.AtkBonus})");
+            Console.WriteLine($"방어력 : {player.Def} + ({equippedItem.DefBonus})");
+            Console.WriteLine($"체력 : {player.Hp} + ({equippedItem.HpBonus})");
         }
         else
         {
@@ -151,6 +153,7 @@ internal class Program
                 break;
         }
     }
+
 
 
     static void DisplayInventory()
@@ -194,12 +197,12 @@ internal class Program
             }
             else
             {
-                DisplayItemInfo(player.Inventory[input - 1]);
+                DisplayItemOptions(player.Inventory[input - 1]);
             }
         }
     }
 
-    static void DisplayItemInfo(Item item)
+    static void DisplayItemOptions(Item item)
     {
         Console.Clear();
 
@@ -208,15 +211,91 @@ internal class Program
         Console.WriteLine($"방어 보너스: {item.DefBonus}");
         Console.WriteLine($"체력 보너스: {item.HpBonus}");
         Console.WriteLine();
-        Console.WriteLine("1. 장착하기");
 
-        // 장착한 아이템이면 해제 옵션 추가
-        if (player.EquippedItem == item)
+        // 아이템의 타입에 따라 다른 옵션 표시
+        if (item is EquipmentItem)
         {
-            Console.WriteLine("2. 장착 해제");
+            Console.WriteLine("1. 장착하기");
+            if (player.EquippedItem == item)
+            {
+                Console.WriteLine("2. 장착 해제");
+            }
+        }
+        else if (item is ConsumableItem)
+        {
+            Console.WriteLine("1. 사용하기");
+        }
+        else
+        {
+            Console.WriteLine("1. 정보 보기");
         }
 
         Console.WriteLine("0. 나가기");
+
+        int input = CheckValidInput(0, item is EquipmentItem ? 2 : 1);
+        switch (input)
+        {
+            case 0:
+                DisplayInventory();
+                break;
+            case 1:
+                if (item is EquipmentItem)
+                {
+                    player.EquipItem(item as EquipmentItem);
+                    Console.WriteLine($"{item.Name}을(를) 장착했습니다.");
+                }
+                else if (item is ConsumableItem)
+                {
+                    player.UseConsumableItem(item as ConsumableItem);
+                }
+                else
+                {
+                    DisplayItemInfo(item);
+                }
+                Console.WriteLine("아무 키나 누르면 인벤토리로 돌아갑니다...");
+                Console.ReadKey();
+                DisplayInventory();
+                break;
+            case 2:
+                if (item is EquipmentItem)
+                {
+                    player.UnequipItem(item as EquipmentItem);
+                    Console.WriteLine($"{item.Name}을(를) 장착 해제했습니다.");
+                    Console.WriteLine("아무 키나 누르면 인벤토리로 돌아갑니다...");
+                    Console.ReadKey();
+                    DisplayInventory();
+                }
+                break;
+        }
+    }
+
+
+    static void DisplayItemInfo(Item item)
+    {
+        Console.Clear();
+
+        Console.WriteLine($"아이템 정보 - {item.Name}");
+
+        if (item is EquipmentItem equipmentItem)
+        {
+            Console.WriteLine($"공격 보너스: {equipmentItem.AtkBonus}");
+            Console.WriteLine($"방어 보너스: {equipmentItem.DefBonus}");
+            Console.WriteLine($"체력 보너스: {equipmentItem.HpBonus}");
+            Console.WriteLine();
+            Console.WriteLine("1. 장착하기");
+
+            // 장착한 아이템이면 해제 옵션 추가
+            if (player.EquippedItem == item)
+            {
+                Console.WriteLine("2. 장착 해제");
+            }
+        }
+        else
+        {
+            Console.WriteLine("(장비 아이템이 아닙니다.)");
+            Console.WriteLine();
+            Console.WriteLine("0. 나가기");
+        }
 
         int input = CheckValidInput(0, player.EquippedItem == item ? 2 : 1);
         switch (input)
@@ -225,21 +304,36 @@ internal class Program
                 DisplayInventory();
                 break;
             case 1:
-                player.EquipItem(item); // 아이템을 장착
-                Console.WriteLine($"{item.Name}을(를) 장착했습니다.");
+                if (item is EquipmentItem)
+                {
+                    player.EquipItem(item); // 아이템을 장착
+                    Console.WriteLine($"{item.Name}을(를) 장착했습니다.");
+                }
+                else
+                {
+                    Console.WriteLine("이 아이템은 장비 아이템이 아닙니다.");
+                }
+
                 Console.WriteLine("아무 키나 누르면 인벤토리로 돌아갑니다...");
                 Console.ReadKey();
                 DisplayInventory();
                 break;
             case 2:
-                player.UnequipItem(item); // 아이템 장착 해제
-                Console.WriteLine($"{item.Name}을(를) 장착 해제했습니다.");
+                if (item is EquipmentItem)
+                {
+                    player.UnequipItem(item); // 아이템 장착 해제
+                    Console.WriteLine($"{item.Name}을(를) 장착 해제했습니다.");
+                }
+                else
+                {
+                    Console.WriteLine("이 아이템은 장비 아이템이 아닙니다.");
+                }
+
                 Console.WriteLine("아무 키나 누르면 인벤토리로 돌아갑니다...");
                 Console.ReadKey();
                 DisplayInventory();
                 break;
         }
-        
     }
     static void DisplayShop()
     {
@@ -281,14 +375,16 @@ internal class Program
 
     static List<Item> GetShopItems()
     {
-        //상점 아이템 목록
+        // 상점 아이템 목록
         List<Item> shopItems = new List<Item>
-        {
-            new Item("스파르타 검", 10, 0, 0, 300),
-            new Item("건강부", 0, 0, 10, 300),
-            new Item("요정의 활", 8, 2, 0, 300),
-            new Item("화염의 오브",3, 0, 0,300) 
-        };
+    {
+        new EquipmentItem("스파르타 검", 10, 0, 0, 300),
+        new EquipmentItem("건강부", 0, 0, 10, 300),
+        new EquipmentItem("요정의 활", 8, 2, 0, 300),
+        new EquipmentItem("화염의 오브", 3, 0, 0, 300),
+        new ConsumableItem("체력 포션", 20, 50),
+        new ConsumableItem("독약", -20, 50)
+    };
 
         return shopItems;
     }
@@ -445,6 +541,7 @@ public class Character
 
     private List<Item> inventory;
     private Item equippedItem;
+
     public void UnequipItem(Item item)
     {
         // 현재 장착된 아이템과 매개변수로 받은 아이템이 일치하면 해제
@@ -453,8 +550,16 @@ public class Character
             equippedItem = null;
         }
     }
+    public void UseConsumableItem(ConsumableItem item)
+    {
+        if (item != null)
+        {
+            item.Use(this);
+            inventory.Remove(item);
+        }
+    }
 
-public Character(string name, string job, int level, int atk, int def, int hp, int gold)
+    public Character(string name, string job, int level, int atk, int def, int hp, int gold)
     {
         Name = name;
         Job = job;
@@ -505,3 +610,49 @@ public class Item
         Price = price;
     }
 }
+
+
+
+public class EquipmentItem : Item
+{
+    public EquipmentItem(string name, int atkBonus, int defBonus, int hpBonus, int price)
+        : base(name, atkBonus, defBonus, hpBonus, price)
+    {
+    }
+}
+
+
+public class ConsumableItem : Item
+{
+    public int EffectAmount { get; }
+
+    public ConsumableItem(string name, int effectAmount, int price)
+        : base(name, 0, 0, 0, price)
+    {
+        EffectAmount = effectAmount;
+    }
+
+    public void Use(Character character)
+    {
+        Console.WriteLine($"{character.Name}이(가) {Name}을(를) 사용했습니다.");
+        ApplyEffect(character);
+    }
+
+    protected virtual void ApplyEffect(Character character)
+        // 아이템의 효과를 캐릭터에게 적용
+    {
+        Console.WriteLine($"{character.Name}에게 {EffectAmount}의 효과를 적용했습니다.");
+    }
+}
+
+
+
+
+public class MiscellaneousItem : Item
+{
+    public MiscellaneousItem(string name, int price)
+        : base(name, 0, 0, 0, price)
+    {
+    }
+}
+
