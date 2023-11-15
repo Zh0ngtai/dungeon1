@@ -127,18 +127,17 @@ internal class Program
         Console.WriteLine($"Lv.{player.Level}");
         Console.WriteLine($"{player.Name}({player.Job})");
 
-        if (player.EquippedItem != null && player.EquippedItem is EquipmentItem equippedItem)
+        if (player.EquippedItem != null)
         {
-            Console.WriteLine("장착 아이템:");
-            Console.WriteLine($"공격력 : {player.Atk} + ({equippedItem.AtkBonus})");
-            Console.WriteLine($"방어력 : {player.Def} + ({equippedItem.DefBonus})");
-            Console.WriteLine($"체력 : {player.Hp} + ({equippedItem.HpBonus})");
+            Console.WriteLine($"공격력 : {player.Atk} + ({player.EquippedItem.AtkBonus})");
+            Console.WriteLine($"방어력 : {player.Def} + ({player.EquippedItem.DefBonus})");
+            DisplayHealthBar(player.Hp, player.EquippedItem.HpBonus);
         }
         else
         {
             Console.WriteLine($"공격력 : {player.Atk}");
             Console.WriteLine($"방어력 : {player.Def}");
-            Console.WriteLine($"체력 : {player.Hp}");
+            DisplayHealthBar(player.Hp, 0);
         }
 
         Console.WriteLine($"Gold : {player.Gold} G");
@@ -153,6 +152,26 @@ internal class Program
                 break;
         }
     }
+
+    static void DisplayHealthBar(int currentHp, int bonusHp)
+    {
+        const int maxHealth = 100; // 최대 체력
+        int totalHealth = maxHealth + bonusHp;
+        int displayedHealth = currentHp + bonusHp;
+
+        int barLength = 20; // 체력바 길이
+
+        int filledLength = (int)((double)displayedHealth / totalHealth * barLength);
+        int emptyLength = barLength - filledLength;
+
+        Console.Write("체력 : [");
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.Write(new string('#', filledLength));
+        Console.ForegroundColor = ConsoleColor.Gray;
+        Console.Write(new string('.', emptyLength));
+        Console.WriteLine($"] {displayedHealth}/{totalHealth}");
+    }
+
 
 
 
@@ -382,8 +401,8 @@ internal class Program
         new EquipmentItem("건강부", 0, 0, 10, 300),
         new EquipmentItem("요정의 활", 8, 2, 0, 300),
         new EquipmentItem("화염의 오브", 3, 0, 0, 300),
-        new ConsumableItem("체력 포션", 20, 50),
-        new ConsumableItem("독약", -20, 50)
+        new HealingPotion("힐링 포션", 20, 50),
+        new HealingPotion("독약", -20, 50)
     };
 
         return shopItems;
@@ -536,7 +555,9 @@ public class Character
     public int Level { get; }
     public int Atk { get; }
     public int Def { get; }
-    public int Hp { get; }
+    public int MaxHp { get; private set; }
+
+    public int Hp { get; set; }
     public int Gold { get; set; }
 
     private List<Item> inventory;
@@ -558,6 +579,7 @@ public class Character
             inventory.Remove(item);
         }
     }
+    
 
     public Character(string name, string job, int level, int atk, int def, int hp, int gold)
     {
@@ -567,11 +589,16 @@ public class Character
         Atk = atk;
         Def = def;
         Hp = hp;
+        MaxHp = hp; 
         Gold = gold;
         inventory = new List<Item>();
         equippedItem = null;
     }
-
+    public void Heal(int amount)
+    {
+        // 최대 체력을 넘지 않도록 조절
+        Hp = Math.Min(MaxHp, Hp + amount);
+    }
     public void AddItem(Item item)
     {
         inventory.Add(item);
@@ -644,7 +671,33 @@ public class ConsumableItem : Item
         Console.WriteLine($"{character.Name}에게 {EffectAmount}의 효과를 적용했습니다.");
     }
 }
+public class StatBoostPotion : ConsumableItem
+{
+    public StatBoostPotion(string name, int effectAmount, int price)
+        : base(name, effectAmount, price)
+    {
+    }
 
+    protected override void ApplyEffect(Character character)
+    {
+        // 스탯을 올리는 효과를 캐릭터에게 적용
+        Console.WriteLine($"{character.Name}에게 {EffectAmount}의 스탯 효과를 적용했습니다.");
+    }
+}
+
+public class HealingPotion : ConsumableItem
+{
+    public HealingPotion(string name, int effectAmount, int price)
+        : base(name, effectAmount, price)
+    {
+    }
+    protected override void ApplyEffect(Character character)
+    {
+        // 체력을 회복하는 효과를 캐릭터에게 적용
+        Console.WriteLine($"{character.Name}에게 {EffectAmount}의 체력을 회복했습니다.");
+        character.Heal(EffectAmount);
+    }
+}
 
 
 
