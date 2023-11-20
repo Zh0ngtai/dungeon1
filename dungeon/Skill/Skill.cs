@@ -6,7 +6,7 @@ public class Skill
 {
     public string Name { get; }
     public int Damage { get; }
-    public int ManaCost { get; } // 새로 추가된 부분
+    public int ManaCost { get; }
 
     public Skill(string name, int damage, int manaCost)
     {

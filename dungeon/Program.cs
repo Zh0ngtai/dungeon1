@@ -47,8 +47,6 @@ internal class Program
             case "전사":
                 EquipmentItem sword = new EquipmentItem("검", 5, 0, 0, 0, 100);
                 player.AddItem(sword);
-                Skill slashSkill = new Skill("슬래시", 15, 10); // 스킬에 마나 소비량 추가
-                player.AddSkill(slashSkill);
                 break;
 
             case "마법사":
