@@ -1,6 +1,10 @@
-﻿namespace MyGame
-{
-    public class Battle
+﻿
+
+using Rtangame;
+
+namespace MyGame;
+
+public class Battle
     {
         private Character player;
         private Monster monster;
@@ -61,36 +65,71 @@
             Console.WriteLine("--------------------------\n");
         }
 
-        private void PlayerTurn()
+    private void PlayerTurn()
+    {
+        Console.WriteLine($"{player.Name}의 턴");
+        Console.WriteLine("1. 일반 공격");
+        Console.WriteLine("2. 스킬 사용");
+        Console.WriteLine("0. 도망가기");
+
+        int choice = CheckValidInput(0, 2);
+
+        switch (choice)
         {
-            Console.WriteLine($"{player.Name}의 턴");
-            Console.WriteLine("1. 일반 공격");
-            Console.WriteLine("2. 스킬 사용 (미구현)");
-            Console.WriteLine("0. 도망가기");
+            case 1:
+                int playerDamage = CalculateDamage(player.Atk, monster.Def);
+                monster.TakeDamage(playerDamage);
+                Console.WriteLine($"{player.Name}이(가) {monster.Name}에게 {playerDamage}의 피해를 입혔습니다!");
+                break;
 
-            int choice = CheckValidInput(0, 2);
+            case 2:
+                UseSkill();
+                break;
 
-            switch (choice)
-            {
-                case 1:
-                    int playerDamage = CalculateDamage(player.Atk, monster.Def);
-                    monster.TakeDamage(playerDamage);
-                    Console.WriteLine($"{player.Name}이(가) {monster.Name}에게 {playerDamage}의 피해를 입혔습니다!");
-                    break;
+            case 0:
+                Console.WriteLine($"{player.Name}이(가) 도망쳤습니다!");
+                DisplayBattleResult(BattleResult.Escape);
+                break;
+        }
+    }
+    private void UseSkill()
+    {
+        Console.WriteLine("사용할 스킬을 선택하세요:");
 
-                case 2:
-                    // 스킬 사용 코드 추가
-                    Console.WriteLine("미구현");
-                    break;
-
-                case 0:
-                    Console.WriteLine($"{player.Name}이(가) 도망쳤습니다!");
-                    DisplayBattleResult(BattleResult.Escape); // 도망치기 사용 시 메인메뉴로 간다.
-                    break;
-            }
+        // 플레이어가 보유한 스킬 목록을 표시
+        for (int i = 0; i < player.Skills.Count; i++)
+        {
+            Console.WriteLine($"{i + 1}. {player.Skills[i].Name} (마나 소비: {player.Skills[i].ManaCost})");
         }
 
-        private void MonsterTurn()
+        Console.WriteLine("0. 뒤로가기");
+
+        int skillChoice = CheckValidInput(0, player.Skills.Count);
+
+        if (skillChoice == 0)
+        {
+            return; // 뒤로가기 선택 시 아무것도 하지 않음
+        }
+
+        Skill selectedSkill = player.Skills[skillChoice - 1];
+
+        // 스킬 사용
+        selectedSkill.Use(player);
+
+        // 몬스터에게 피해 입히기
+        int damage = CalculateDamage(selectedSkill.Damage, monster.Def);
+        monster.TakeDamage(damage);
+        Console.WriteLine($"{player.Name}이(가) {monster.Name}에게 {damage}의 피해를 입혔습니다!");
+    }
+    private void DisplaySkills()
+    {
+        Console.WriteLine("사용 가능한 스킬 목록:");
+        for (int i = 0; i < player.Skills.Count; i++)
+        {
+            Console.WriteLine($"{i + 1}. {player.Skills[i].Name} ({player.Skills[i].Damage} 피해)");
+        }
+    }
+    private void MonsterTurn()
         {
             Console.WriteLine($"{monster.Name}의 턴");
             int monsterDamage = CalculateDamage(monster.Atk, player.Def);
@@ -147,4 +186,6 @@
             }
         }
     }
-}
+
+
+

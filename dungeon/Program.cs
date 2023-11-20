@@ -1,5 +1,8 @@
-﻿using System;
+﻿using Rtangame;
+using System;
 using System.Collections.Generic;
+
+
 namespace MyGame;
 internal class Program
 {
@@ -7,6 +10,7 @@ internal class Program
 
     static void Main(string[] args)
     {
+        Console.SetWindowSize(Console.LargestWindowWidth, Console.LargestWindowHeight);
         DisplayTitleScreen();
         GameDataSetting();
         DisplayGameIntro();
@@ -36,30 +40,35 @@ internal class Program
         string job = ChooseClass();
 
         // 캐릭터 정보 세팅
-        player = new Character(playerName, job, 1, 10, 5, 100, 1500);
+        player = new Character(playerName, job, 1, 10, 5, 100, 1500, 50, 50); // MaxMana와 초기 Mana 추가
 
         // 직업에 따라 다른 아이템 지급
         switch (job)
         {
             case "전사":
-                EquipmentItem sword = new EquipmentItem("검", 5, 0, 0, 100);
+                EquipmentItem sword = new EquipmentItem("검", 5, 0, 0, 0, 100);
                 player.AddItem(sword);
+                Skill slashSkill = new Skill("슬래시", 15, 10); // 스킬에 마나 소비량 추가
+                player.AddSkill(slashSkill);
                 break;
 
             case "마법사":
-                EquipmentItem staff = new EquipmentItem("지팡이", 3, 0, 0, 120);
+                EquipmentItem staff = new EquipmentItem("지팡이", 3, 0, 0, 10, 100);
                 player.AddItem(staff);
+                Skill fireballSkill = new Skill("파이어볼", 20, 15); // 스킬에 마나 소비량 추가
+                player.AddSkill(fireballSkill);
                 break;
 
             case "레인저":
-                EquipmentItem bow = new EquipmentItem("활", 4, 0, 0, 80);
+                EquipmentItem bow = new EquipmentItem("활", 4, 0, 0, 5, 10);
                 player.AddItem(bow);
+                Skill arrowShotSkill = new Skill("화살 쏘기", 12, 8); // 스킬에 마나 소비량 추가
+                player.AddSkill(arrowShotSkill);
                 break;
         }
-
     }
 
-    static string ChooseClass()
+    static string ChooseClass() 
     {
         Console.WriteLine("직업을 선택하세요:");
         Console.ForegroundColor = ConsoleColor.Red;
@@ -137,14 +146,18 @@ internal class Program
             Console.WriteLine($"공격력 : {player.Atk} + ({player.EquippedItem.AtkBonus})");
             Console.WriteLine($"방어력 : {player.Def} + ({player.EquippedItem.DefBonus})");
             DisplayHealthBar(player.Hp, player.EquippedItem.HpBonus);
+            DisplayManaBar(player.Mana, player.MaxMana);
         }
         else
         {
             Console.WriteLine($"공격력 : {player.Atk}");
             Console.WriteLine($"방어력 : {player.Def}");
             DisplayHealthBar(player.Hp, 0);
+            DisplayManaBar(player.Mana, player.MaxMana);
         }
 
+        Console.WriteLine($"체력 : {player.Hp}/{player.MaxHp}");
+        Console.WriteLine($"마나 : {player.Mana}/{player.MaxMana}");
         Console.WriteLine($"Gold : {player.Gold} G");
         Console.WriteLine();
         Console.WriteLine("0. 나가기");
@@ -177,7 +190,24 @@ internal class Program
         Console.WriteLine($"] {displayedHealth}/{totalHealth}");
     }
 
+    static void DisplayManaBar(int currentMana, int maxMana)
+    {
+        const int maxManaValue = 50; // 최대 마나
+        int totalMana = maxMana + maxManaValue;
+        int displayedMana = currentMana + maxManaValue;
 
+        int barLength = 20; // 마나바 길이
+
+        int filledLength = (int)((double)displayedMana / totalMana * barLength);
+        int emptyLength = barLength - filledLength;
+
+        Console.Write("마나 : [");
+        Console.ForegroundColor = ConsoleColor.Blue;
+        Console.Write(new string('#', filledLength));
+        Console.ForegroundColor = ConsoleColor.Gray;
+        Console.Write(new string('.', emptyLength));
+        Console.WriteLine($"] {displayedMana}/{totalMana}");
+    }
 
 
     static void DisplayInventory()
@@ -402,10 +432,10 @@ internal class Program
         // 상점 아이템 목록
         List<Item> shopItems = new List<Item>
     {
-        new EquipmentItem("스파르타 검", 10, 0, 0, 300),
-        new EquipmentItem("건강부", 0, 0, 10, 300),
-        new EquipmentItem("요정의 활", 8, 2, 0, 300),
-        new EquipmentItem("화염의 오브", 3, 0, 0, 300),
+        new EquipmentItem("스파르타 검", 10, 0, 0, 0, 300),
+        new EquipmentItem("건강부", 0, 0, 10, 0, 300),
+        new EquipmentItem("요정의 활", 8, 2, 0, 10, 300),
+        new EquipmentItem("화염의 오브", 3, 0, 0, 15, 300),
         new HealingPotion("힐링 포션", 20, 50),
         new HealingPotion("독약", -20, 50)
     };
@@ -609,7 +639,3 @@ internal class Program
     }
 }
 
-
-
-
-   
