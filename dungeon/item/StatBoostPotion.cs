@@ -1,4 +1,6 @@
-﻿namespace MyGame;
+﻿
+
+namespace MyGame;
 
 public class StatBoostPotion : ConsumableItem
 {
