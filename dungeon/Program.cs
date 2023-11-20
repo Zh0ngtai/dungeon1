@@ -10,6 +10,7 @@ internal class Program
 
     static void Main(string[] args)
     {
+        Console.SetWindowSize(Console.LargestWindowWidth, Console.LargestWindowHeight);
         DisplayTitleScreen();
         GameDataSetting();
         DisplayGameIntro();
