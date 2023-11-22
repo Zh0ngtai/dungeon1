@@ -257,10 +257,21 @@ internal class Program
         Console.Clear();
 
         Console.WriteLine($"아이템 정보 - {item.Name}");
-        Console.WriteLine($"공격 보너스: {item.AtkBonus}");
-        Console.WriteLine($"방어 보너스: {item.DefBonus}");
-        Console.WriteLine($"체력 보너스: {item.HpBonus}");
-        Console.WriteLine();
+
+        if (item.AtkBonus > 0)
+        {
+            Console.WriteLine($"공격 보너스: {item.AtkBonus}");
+        }
+
+        if (item.DefBonus > 0)
+        {
+            Console.WriteLine($"방어 보너스: {item.DefBonus}");
+        }
+
+        if (item.HpBonus > 0)
+        {
+            Console.WriteLine($"체력 보너스: {item.HpBonus}");
+        }
 
         // 아이템의 타입에 따라 다른 옵션 표시
         if (item is EquipmentItem)
